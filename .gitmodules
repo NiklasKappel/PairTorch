@@ -1,3 +1,4 @@
 [submodule "extern/lammps"]
 	path = extern/lammps
 	url = https://github.com/lammps/lammps.git
+	branch = release
