@@ -2,6 +2,7 @@ add_library(PairTorch MODULE pair_torch.cpp torchplugin.cpp)
 target_link_libraries(PairTorch PRIVATE lammps)
 set_target_properties(PairTorch PROPERTIES PREFIX "" SUFFIX ".so")
 
+# See https://github.com/lammps/lammps/blob/release/examples/kim/plugin/CMakeLists.txt#L47.
 # MacOS seems to need this.
 if(CMAKE_SYSTEM_NAME STREQUAL Darwin)
   set_target_properties(PairTorch PROPERTIES LINK_FLAGS "-Wl,-undefined,dynamic_lookup")
