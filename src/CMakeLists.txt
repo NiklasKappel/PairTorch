@@ -1,4 +1,4 @@
-add_library(PairTorch MODULE pair_torch.cpp)
+add_library(PairTorch MODULE pair_torch.cpp torchplugin.cpp)
 target_link_libraries(PairTorch PRIVATE lammps)
 set_target_properties(PairTorch PROPERTIES PREFIX "" SUFFIX ".so")
 
