@@ -1,5 +1,5 @@
 ---
-Checks: "*,-altera-*,-fuchsia-*,-llvmlibc-*,-*-named-parameter, -google-build-using-namespace, -modernize-use-trailing-return-type"
+Checks: "*,-altera-*,-fuchsia-*,-llvmlibc-*,-*-named-parameter, -google-build-using-namespace"
 WarningsAsErrors: ""
 HeaderFileExtensions:
   - ""

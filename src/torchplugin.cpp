@@ -1,6 +1,7 @@
 #include "lammpsplugin.h"
-#include "pair_torch.h"
 #include "version.h"
+
+#include "pair_torch.h"
 
 using namespace LAMMPS_NS;
 
