@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.24)
+cmake_minimum_required(VERSION 3.16...3.24)
 project(PairTorch VERSION 1.0 LANGUAGES CXX)
 
 # See https://github.com/lammps/lammps/blob/release/cmake/Modules/LAMMPSInterfacePlugin.cmake#L13.
