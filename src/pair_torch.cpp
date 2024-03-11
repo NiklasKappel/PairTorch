@@ -3,8 +3,7 @@
 #include "atom.h"
 #include "error.h"
 
-#include <span>
-#include <string>
+#include <cstring>
 
 #include <torch/script.h>
 
@@ -30,24 +29,25 @@ void PairTorch::settings(int narg, char ** /*arg*/)
 
 void PairTorch::coeff(int narg, char **arg)
 {
-  auto const arguments = std::span(arg, narg);
+  auto const ntypes = atom->ntypes;
 
-  if (narg != (3 + atom->ntypes)) {
+  if (narg != (3 + ntypes)) {
     error->all(FLERR,
                "Wrong number of arguments for `pair_coeff` command, should be `pair_coeff * * "
                "<model>.pt <type1> <type2> ... <typeN>`.");
   }
 
-  if (strcmp(arguments[0], "*") != 0 || strcmp(arguments[1], "*") != 0) {
+  if (std::strcmp(arg[0], "*") != 0 || std::strcmp(arg[1], "*") != 0) {
     error->all(
         FLERR,
         "Wrong numeric atom types for `pair_coeff` command, should be `pair_coeff * * ...`.");
   }
 
-  model = torch::jit::load(arguments[2], device);
+  model = torch::jit::load(arg[2], device);
   model.eval();
 
-  auto const types = arguments.subspan(3);
-  type_map.reserve(types.size());
-  for (auto *type : types) { type_map.push_back(std::stoi(type)); }
+  type_map.reserve(ntypes);
+  for (auto i = 3; i < narg; ++i) {
+    type_map.push_back(utils::inumeric(FLERR, arg[i], false, lmp));
+  }
 }

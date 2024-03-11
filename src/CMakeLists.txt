@@ -1,5 +1,5 @@
 add_library(PairTorch MODULE pair_torch.cpp torchplugin.cpp)
-target_compile_features(PairTorch PRIVATE cxx_std_20)
+target_compile_features(PairTorch PRIVATE cxx_std_17)
 target_link_libraries(PairTorch PRIVATE lammps)
 target_link_libraries(PairTorch PRIVATE "${TORCH_LIBRARIES}")
 set_target_properties(PairTorch PROPERTIES PREFIX "" SUFFIX ".so")
