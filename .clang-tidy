@@ -19,4 +19,5 @@ User: niklas
 CheckOptions:
   cppcoreguidelines-special-member-functions.AllowSoleDefaultDtor: true
   hicpp-special-member-functions.AllowSoleDefaultDtor: true
+  readability-identifier-length.IgnoredVariableNames: "f|x"
 SystemHeaders: false
