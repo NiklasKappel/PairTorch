@@ -61,7 +61,7 @@ void PairTorch::compute(int eflag, int vflag)
   // Neighbor lists.
   auto const *const *const firstneigh = list->firstneigh;
 
-  // Numbers of entries of all neighbor lists.
+  // Sizes of all neighbor lists.
   auto const *const numneigh = list->numneigh;
 
   // Cached loop variables.
@@ -89,6 +89,7 @@ void PairTorch::compute(int eflag, int vflag)
       delz = ztmp - x[j][2];
       rsq = delx * delx + dely * dely + delz * delz;
 
+      // rsq is in [0, (global cutoff + skin distance)^2].
       if (rsq < global_cutoff_sq) {}
     }
   }
