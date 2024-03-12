@@ -1,2 +1,2 @@
 plugin load ../src/PairTorch.so
-pair_style torch
+pair_style torch 1.0

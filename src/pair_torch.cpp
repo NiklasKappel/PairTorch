@@ -2,6 +2,7 @@
 
 #include "atom.h"
 #include "error.h"
+#include "memory.h"
 #include "neigh_list.h"
 
 #include <cstring>
@@ -18,12 +19,26 @@ PairTorch::PairTorch(LAMMPS *lmp) : Pair(lmp)
   manybody_flag = 1;
 }
 
-// TODO(niklas):
-// The `positions` and `types` tensors contains positions and types of all local atoms.
-// The `edge_index` tensor contains local indices of atoms described by the ML pair style only.
-// Passing these tensors into the model means the model must be invariant under the addition of unconnected atoms.
-// For ML/MM, it also means we crunch much larger tensors than necessary.
-// Alternatively, one could translate back and forth between local and ML indices and pass smaller `positions` and `types` tensors.
+PairTorch::~PairTorch()
+{
+  if (allocated != 0) {
+    memory->destroy(cutsq);
+    memory->destroy(setflag);
+  }
+}
+
+// The boilerplate associated with `cutsq` and `setflag` can not be avoided.
+// See https://matsci.org/t/what-cutoff-does-the-neighbor-list-use-if-init-one-is-not-defined/54098.
+void PairTorch::allocate()
+{
+  allocated = 1;
+  auto const np1 = atom->ntypes + 1;
+  memory->create(cutsq, np1, np1, "pair:cutsq");
+  memory->create(setflag, np1, np1, "pair:setflag");
+  for (auto i = 1; i < np1; ++i) {
+    for (auto j = i; j < np1; ++j) { setflag[i][j] = 0; }
+  }
+}
 
 void PairTorch::compute(int eflag, int vflag)
 {
@@ -50,29 +65,44 @@ void PairTorch::compute(int eflag, int vflag)
   auto const *const numneigh = list->numneigh;
 
   // Cached loop variables.
-  auto const *jlist = firstneigh[0];
-  auto jnum = numneigh[0];
+  int i, j, ii, jj, jnum;                            // NOLINT
+  int const *jlist;                                  // NOLINT
+  double xtmp, ytmp, ztmp, delx, dely, delz, rsq;    // NOLINT
+  auto const global_cutoff_sq = global_cutoff * global_cutoff;
 
-  for (int ii = 0, i = 0; ii < inum; ++ii) {
+  for (ii = 0; ii < inum; ++ii) {
     i = ilist[ii];
     jlist = firstneigh[i];
     jnum = numneigh[i];
 
-    for (int jj = 0, j = 0; jj < jnum; ++jj) {
+    xtmp = x[i][0];
+    ytmp = x[i][1];
+    ztmp = x[i][2];
+
+    for (jj = 0; jj < jnum; ++jj) {
       j = jlist[jj];
       j &= NEIGHMASK;    // NOLINT(hicpp-signed-bitwise): Required by LAMMPS.
       // j is now the local index of a neighbor of the atom with local index i.
-      // Build the `edge_index` tensor.
+
+      delx = xtmp - x[j][0];
+      dely = ytmp - x[j][1];
+      delz = ztmp - x[j][2];
+      rsq = delx * delx + dely * dely + delz * delz;
+
+      if (rsq < global_cutoff_sq) {}
     }
   }
 }
 
-void PairTorch::settings(int narg, char ** /*arg*/)
+void PairTorch::settings(int narg, char **arg)
 {
-  if (narg > 0) {
+  if (narg != 1) {
     error->all(FLERR,
-               "Wrong number of arguments for `pair_style` command, should be `pair_style torch`.");
+               "Wrong number of arguments for `pair_style` command, should be `pair_style torch "
+               "<global_cutoff>`.");
   }
+
+  global_cutoff = utils::numeric(FLERR, arg[0], false, lmp);
 }
 
 void PairTorch::coeff(int narg, char **arg)
@@ -98,4 +128,18 @@ void PairTorch::coeff(int narg, char **arg)
   for (auto i = 3; i < narg; ++i) {
     type_map.push_back(utils::inumeric(FLERR, arg[i], false, lmp));
   }
+
+  if (allocated == 0) { allocate(); }
+  for (auto i = 1; i <= ntypes; ++i) {
+    for (auto j = i; j <= ntypes; ++j) { setflag[i][j] = 1; }
+  }
+}
+
+auto PairTorch::init_one(int i, int j) -> double
+{
+  if (setflag[i][j] == 0) {
+    error->all(FLERR, "There are LAMMPS atom types with undefined model types.");
+  }
+
+  return global_cutoff;    // Determines neighbor list cutoff.
 }
