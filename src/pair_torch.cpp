@@ -42,33 +42,29 @@ void PairTorch::allocate()
 
 void PairTorch::compute(int eflag, int vflag)
 {
+  // TODO(niklas): What to do whith these?
   ev_init(eflag, vflag);
-
-  // Types of all owned and ghost atoms in the local subdomain.
-  auto const *const type = atom->type;
 
   // Positions of all owned and ghost atoms in the local subdomain.
   auto const *const *const x = atom->x;
-
   // Number of atoms for which neighbor lists have been created.
   // This can not be greater than the number of owned atoms.
   // It can be smaller, e.g. if a hybrid pair style is used.
   auto const inum = list->inum;
-
-  // Local indices of all atoms for which neighbor lists have been created.
+  // Local indices of all owned atoms for which neighbor lists have been created.
   auto const *const ilist = list->ilist;
-
   // Neighbor lists.
   auto const *const *const firstneigh = list->firstneigh;
-
   // Sizes of all neighbor lists.
   auto const *const numneigh = list->numneigh;
 
-  // Cached loop variables.
   int i, j, ii, jj, jnum;                            // NOLINT
   int const *jlist;                                  // NOLINT
   double xtmp, ytmp, ztmp, delx, dely, delz, rsq;    // NOLINT
   auto const global_cutoff_sq = global_cutoff * global_cutoff;
+
+  auto edge_index_row_1 = std::vector<int>{};
+  auto edge_index_row_2 = std::vector<int>{};
 
   for (ii = 0; ii < inum; ++ii) {
     i = ilist[ii];
@@ -82,7 +78,8 @@ void PairTorch::compute(int eflag, int vflag)
     for (jj = 0; jj < jnum; ++jj) {
       j = jlist[jj];
       j &= NEIGHMASK;    // NOLINT(hicpp-signed-bitwise): Required by LAMMPS.
-      // j is now the local index of a neighbor of the atom with local index i.
+      // j is now the local index of a neighbor of the owned atom with local index i.
+      // j can index an owned or ghost atom.
 
       delx = xtmp - x[j][0];
       dely = ytmp - x[j][1];
@@ -90,8 +87,52 @@ void PairTorch::compute(int eflag, int vflag)
       rsq = delx * delx + dely * dely + delz * delz;
 
       // rsq is in [0, (global cutoff + skin distance)^2].
-      if (rsq < global_cutoff_sq) {}
+      if (rsq < global_cutoff_sq) {
+        edge_index_row_1.insert(edge_index_row_1.end(), {i, j});
+        edge_index_row_2.insert(edge_index_row_2.end(), {j, i});
+      }
     }
+  }
+
+  // Number of all owned and ghost atoms in the local subdomain.
+  auto const ntotal = atom->nlocal + atom->nghost;
+  // Types of all owned and ghost atoms in the local subdomain.
+  auto *const type = atom->type;
+
+  auto const edge_index = torch::tensor({edge_index_row_1, edge_index_row_2}, torch::kInt32);
+  auto const types = torch::zeros({ntotal}, torch::kInt32);
+  auto const positions = torch::zeros({ntotal, 3}, torch::kFloat32);
+
+  auto type_accessor = types.accessor<int, 1>();
+  auto position_accessor = positions.accessor<float, 2>();
+
+  for (auto k = 0; k < ntotal; ++k) {
+    type_accessor[k] = type_map[type[k] - 1];
+    position_accessor[k][0] = static_cast<float>(x[k][0]);
+    position_accessor[k][1] = static_cast<float>(x[k][1]);
+    position_accessor[k][2] = static_cast<float>(x[k][2]);
+  }
+
+  // TODO(niklas): Double check if the tensors are correct.
+  // Make a test system and print arrays and tensors.
+
+  // TODO(niklas): Test forces.
+  // TODO(niklas): When to move between devices?
+
+  auto const model_inputs = std::vector<torch::jit::IValue>{types.to(device), positions.to(device),
+                                                            edge_index.to(device)};
+  auto const model_outputs = model.forward(model_inputs).toTensorVector();
+
+  auto energy_accessor = model_outputs[0].accessor<float, 2>();
+  auto forces_accessor = model_outputs[1].accessor<float, 2>();
+
+  // Forces on all owned and ghost atoms in the local subdomain.
+  auto *const *const f = atom->f;
+
+  for (auto k = 0; k < ntotal; ++k) {
+    f[k][0] += forces_accessor[k][0];
+    f[k][1] += forces_accessor[k][1];
+    f[k][2] += forces_accessor[k][2];
   }
 }
 
