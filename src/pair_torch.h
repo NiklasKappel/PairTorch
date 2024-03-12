@@ -21,9 +21,9 @@ class PairTorch : public Pair {
  private:
   void allocate();
 
-  double global_cutoff{0.0};
+  double global_cutoff = 0.0;
   std::vector<int> type_map;
-  torch::Device device{torch::kCPU};
+  torch::Device device = torch::kCPU;
   torch::jit::Module model;
 };
 
