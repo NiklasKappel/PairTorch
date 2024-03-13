@@ -2,6 +2,7 @@
 
 #include "atom.h"
 #include "error.h"
+#include "force.h"
 #include "memory.h"
 #include "neigh_list.h"
 
@@ -38,7 +39,6 @@ void PairTorch::allocate() {
 }
 
 void PairTorch::compute(int eflag, int vflag) {
-  // TODO(niklas): What to do with these?
   ev_init(eflag, vflag);
 
   // Number of atoms with neighbor lists.
@@ -93,8 +93,10 @@ void PairTorch::compute(int eflag, int vflag) {
       {edge_index_row_1, edge_index_row_2},
       torch::dtype(torch::kInt32).device(torch::kCPU));
 
+  // Number of owned atoms.
+  auto const nlocal = atom->nlocal;
   // Number of owned and ghost atoms.
-  auto const ntotal = atom->nlocal + atom->nghost;
+  auto const ntotal = nlocal + atom->nghost;
   // Types of owned and ghost atoms.
   auto *const type = atom->type;
 
@@ -113,26 +115,32 @@ void PairTorch::compute(int eflag, int vflag) {
     position_accessor[k][2] = static_cast<float>(x[k][2]);
   }
 
-  // TODO(niklas): Double check if the tensors are correct.
+  // TODO(niklas): Test tensors.
+  // TODO(niklas): Test forces.
   // Make a test system and print arrays and tensors.
 
   auto const model_inputs = std::vector<torch::jit::IValue>{
       types.to(device), positions.to(device), edge_index.to(device)};
   auto const model_outputs = model.forward(model_inputs).toTensorVector();
 
-  // TODO(niklas): Move tensors to CPU.
-  auto energy_accessor = model_outputs[0].accessor<float, 2>();
-  auto forces_accessor = model_outputs[1].accessor<float, 2>();
+  // auto const energy = torch::Tensor{model_outputs[0]}.to(torch::kCPU);
+  auto const forces = torch::Tensor{model_outputs[1]}.to(torch::kCPU);
+
+  // auto const energy_accessor = energy.accessor<float, 2>();
+  auto const forces_accessor = forces.accessor<float, 2>();
 
   // Forces on owned and ghost atoms.
   auto *const *const f = atom->f;
 
-  // TODO(niklas): Test forces.
-  // TODO(niklas): Newton flag.
-  for (auto k = 0; k < ntotal; ++k) {
+  auto k_max = force->newton_pair != 0 ? ntotal : nlocal;
+  for (auto k = 0; k < k_max; ++k) {
     f[k][0] += forces_accessor[k][0];
     f[k][1] += forces_accessor[k][1];
     f[k][2] += forces_accessor[k][2];
+  }
+
+  if (vflag_fdotr != 0) {
+    virial_fdotr_compute();
   }
 }
 
