@@ -135,12 +135,10 @@ void PairTorch::compute(int eflag, int vflag) {
 
   auto const model_inputs = std::vector<torch::jit::IValue>{
       types.to(device), positions.to(device), edge_index.to(device)};
-  auto const model_outputs = model.forward(model_inputs).toTensorVector();
+  auto const model_outputs = model.forward(model_inputs).toTuple()->elements();
 
-  // auto const energy = torch::Tensor{model_outputs[0]}.to(torch::kCPU);
-  // auto const energy_accessor = energy.accessor<float, 2>();
-
-  auto const forces = torch::Tensor{model_outputs[1]}.to(torch::kCPU);
+  auto const forces = torch::Tensor{model_outputs[1].toTensor()}.to(
+      torch::kCPU);
   auto const forces_accessor = forces.accessor<float, 2>();
 
   // ==============================
