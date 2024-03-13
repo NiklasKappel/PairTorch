@@ -5,3 +5,4 @@ AlignAfterOpenBracket: AlwaysBreak
 BreakBeforeBinaryOperators: NonAssignment
 
 PenaltyBreakAssignment: 100
+PenaltyIndentedWhitespace: 100
