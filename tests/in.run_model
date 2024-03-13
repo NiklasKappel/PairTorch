@@ -1,22 +1,61 @@
-plugin load ../src/PairTorch.so
-pair_style torch 1.0
+# Adapted from https://lammpstutorials.github.io/sphinx/build/html/tutorials/level1/lennard-jones-fluid.html.
 
+plugin load ../src/PairTorch.so
+
+# PART A - ENERGY MINIMIZATION
+# 1) Initialization
 units lj
 dimension 3
 atom_style atomic
+pair_style torch 2.5
 boundary p p p
 
+# 2) System definition
 region simulation_box block -10 10 -10 10 -10 10
 create_box 2 simulation_box
 region region_cylinder_in cylinder z 0 0 5 INF INF side in
-region region_cylinder_out cylinder z 0 0 10 INF INF side out
+region region_cylinder_out cylinder z 0 0 5 INF INF side out
 create_atoms 1 random 128 341341 region_cylinder_out
 create_atoms 2 random 16 127569 region_cylinder_in
 
+# 3) Simulation settings
 mass 1 1
 mass 2 1
 pair_coeff * * ../../tests/zero_model.pt 1 6
 
+# 4) Visualization
 thermo 10
 thermo_style custom step temp pe ke etotal press
+dump mydmp_min all atom 10 dump.min.lammpstrj
+
+# 5) Run
 minimize 1.0e-4 1.0e-6 1000 10000
+
+
+# PART B - MOLECULAR DYNAMICS
+# 4) Visualization
+thermo 1000
+dump mydmp_md all atom 1000 dump.md.lammpstrj
+
+group group_type_1 type 1
+group group_type_2 type 2
+
+variable number_type1_in equal count(group_type_1,region_cylinder_in)
+variable number_type2_in equal count(group_type_2,region_cylinder_in)
+fix myat1 all ave/time 10 200 2000 v_number_type1_in &
+    file output-population1vstime.dat
+fix myat2 all ave/time 10 200 2000 v_number_type2_in &
+    file output-population2vstime.dat
+
+compute coor12 group_type_1 coord/atom cutoff 2.0 group group_type_2
+compute sumcoor12 all reduce ave c_coor12
+fix myat3 all ave/time 10 200 2000 &
+    c_sumcoor12 file coordinationnumber12.dat
+
+# 5) Run
+velocity all create 1.0 4928459 mom yes rot yes dist gaussian
+fix mynve all nve
+fix mylgv all langevin 1.0 1.0 0.1 1530917 zero yes
+timestep 0.005
+run 300
+write_data mixed.data
