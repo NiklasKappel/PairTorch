@@ -12,11 +12,16 @@
 
 using namespace LAMMPS_NS;
 
-PairTorch::PairTorch(LAMMPS *lmp) : Pair(lmp) {
+PairTorch::PairTorch(LAMMPS *lmp)
+    : Pair{lmp}, global_cutoff{0.0}, device{torch::kCPU} {
   single_enable = 0;
   restartinfo = 0;
   one_coeff = 1;
   manybody_flag = 1;
+
+  if (torch::cuda::is_available()) {
+    device = torch::kCUDA;
+  }
 }
 
 PairTorch::~PairTorch() {
