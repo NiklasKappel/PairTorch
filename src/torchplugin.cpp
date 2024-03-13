@@ -5,14 +5,10 @@
 
 using namespace LAMMPS_NS;
 
-static Pair *pair_torch_creator(LAMMPS *lmp)
-{
-  return new PairTorch(lmp);
-}
+static Pair *pair_torch_creator(LAMMPS *lmp) { return new PairTorch(lmp); }
 
-extern "C" void lammpsplugin_init(void *lmp, void *handle, void *regfunc)
-{
-  lammpsplugin_regfunc register_plugin = (lammpsplugin_regfunc) regfunc;
+extern "C" void lammpsplugin_init(void *lmp, void *handle, void *regfunc) {
+  lammpsplugin_regfunc register_plugin = (lammpsplugin_regfunc)regfunc;
   lammpsplugin_t plugin;
 
   plugin.version = LAMMPS_VERSION;
@@ -20,7 +16,7 @@ extern "C" void lammpsplugin_init(void *lmp, void *handle, void *regfunc)
   plugin.name = "torch";
   plugin.info = "PairTorch pair style plugin v1.0";
   plugin.author = "Niklas Kappel (niklas.kappel@kit.edu)";
-  plugin.creator.v1 = (lammpsplugin_factory1 *) &pair_torch_creator;
+  plugin.creator.v1 = (lammpsplugin_factory1 *)&pair_torch_creator;
   plugin.handle = handle;
   (*register_plugin)(&plugin, lmp);
 }

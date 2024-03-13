@@ -10,7 +10,7 @@
 namespace LAMMPS_NS {
 
 class PairTorch : public Pair {
- public:
+public:
   explicit PairTorch(class LAMMPS *);
   ~PairTorch() override;
   void compute(int, int) override;
@@ -18,7 +18,7 @@ class PairTorch : public Pair {
   void coeff(int, char **) override;
   auto init_one(int, int) -> double override;
 
- private:
+private:
   void allocate();
 
   double global_cutoff = 0.0;
@@ -27,6 +27,6 @@ class PairTorch : public Pair {
   torch::jit::Module model;
 };
 
-}    // namespace LAMMPS_NS
+} // namespace LAMMPS_NS
 
 #endif
