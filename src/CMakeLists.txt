@@ -17,3 +17,9 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
 else()
   set_target_properties(PairTorch PROPERTIES LINK_FLAGS "-rdynamic")
 endif()
+
+install(
+  TARGETS PairTorch
+  LIBRARY
+  DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+)

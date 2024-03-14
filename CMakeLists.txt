@@ -35,6 +35,16 @@ else()
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
+# See https://github.com/lammps/lammps/blob/release/cmake/CMakeLists.txt#L47.
+if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+  if((CMAKE_SYSTEM_NAME STREQUAL "Windows") AND (NOT CMAKE_CROSSCOMPILING))
+    set(CMAKE_INSTALL_PREFIX "$ENV{USERPROFILE}/LAMMPS" CACHE PATH "Default install path" FORCE)
+  else()
+    set(CMAKE_INSTALL_PREFIX "$ENV{HOME}/.local" CACHE PATH "Default install path" FORCE)
+  endif()
+endif()
+include(GNUInstallDirs)
+
 add_subdirectory(src)
 
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
