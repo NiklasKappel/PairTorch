@@ -15,6 +15,9 @@ cd build
 make install
 ```
 
+> [!IMPORTANT]
+> The installation instructions for LAMMPS above and PairTorch below install shared libraries (including LibTorch) to a user directory, e.g. `~/.local/lib64/` on UNIX. Make sure this directory is on your runtime search path, e.g. by adding `export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:~/.local/lib64/"` to your `~/.bashrc`.
+
 To run models on GPUs, CUDA 11.8 or newer must be installed on your system.
 
 ## Installation
