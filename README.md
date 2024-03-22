@@ -41,28 +41,28 @@ Your model is expected to have a `forward` method with a signature that follows 
 class MyModel(torch.nn.Module):
     ...
 
-    def forward(self, types, positions, edge_index, batch=None):
+    def forward(self, types, positions, edge_index, **kwargs):
         """Compute the energy and forces of the system.
 
         Parameters
         ----------
         types : torch.Tensor
-            Atom types with shape [num_atoms].
+            Atom types with shape [num_atoms]
             and data type torch.int32.
         positions : torch.Tensor
             Atom positions with shape [num_atoms, num_dimensions]
             and data type torch.float32.
         edge_index: torch.Tensor
             Interaction graph connectivity with shape [2, num_edges]
-            and data type torch.int32.
-        batch : torch.Tensor | None
-            Optional batch assignment with shape [num_atoms]
-            and data type torch.int32.
+            and data type torch.long.
+        kwargs: Any
+            Keyword arguments. They must be optional
+            and PairTorch will not pass them to your model.
 
         Returns
         -------
         energy : torch.Tensor
-            Total energy of the system with shape [num_batches, 1]
+            Total energy of the system with shape [1, 1]
             and data type torch.float32.
         forces : torch.Tensor
             Forces on each atom with shape [num_atoms, num_dimensions]

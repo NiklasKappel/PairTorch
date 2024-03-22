@@ -116,7 +116,7 @@ void PairTorch::compute(int eflag, int vflag) {
   auto const edge_index =
       torch::from_blob(
           edge_indices.data(), {static_cast<long>(edge_indices.size() / 2), 2},
-          torch::dtype(torch::kInt32).device(torch::kCPU))
+          torch::dtype(torch::kInt64).device(torch::kCPU))
           .transpose_(0, 1);
 
   auto const types = torch::zeros(
