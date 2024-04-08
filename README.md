@@ -4,7 +4,7 @@ PairTorch is a pair style plugin for [LAMMPS](https://www.lammps.org) that lets 
 
 ## Requirements
 
-PairTorch assumes that you build and install LAMMPS from source. Your LAMMPS installation must be able to load [plugins](https://docs.lammps.org/plugin.html). This means that you need to build LAMMPS with the `PKG_PLUGIN` and `BUILD_SHARED_LIBS` options enabled. For example, run the following steps:
+PairTorch assumes that you build and install LAMMPS from source. Your LAMMPS installation must be able to load [plugins](https://docs.lammps.org/plugin.html). This means that you need to build LAMMPS with the `PKG_PLUGIN` and `BUILD_SHARED_LIBS` options enabled. For example, run the following commands:
 
 ```
 git clone -b release https://github.com/lammps/lammps.git
@@ -22,10 +22,10 @@ To run models on GPUs, CUDA 11.8 or newer must be installed on your system.
 
 ## Installation
 
-Run the following steps, replacing `<path/to/lammps/src/>` with the path to the `src/` directory in your local copy of the LAMMPS repository:
+Run the following commands, replacing `<path/to/lammps/src/>` with the path to the `src/` directory in your local copy of the LAMMPS repository:
 
 ```
-git clone <this repo>
+git clone https://github.com/NiklasKappel/PairTorch.git
 cd PairTorch
 cmake -S . -B build -DLAMMPS_SOURCE_DIR=<path/to/lammps/src/>
 cmake --build build --parallel 8
@@ -48,14 +48,14 @@ class MyModel(torch.nn.Module):
         ----------
         types : torch.Tensor
             Atom types with shape [num_atoms]
-            and data type torch.int32.
+            and data type torch.int.
         positions : torch.Tensor
             Atom positions with shape [num_atoms, num_dimensions]
-            and data type torch.float32.
-        edge_index: torch.Tensor
+            and data type torch.float.
+        edge_index : torch.Tensor
             Interaction graph connectivity with shape [2, num_edges]
             and data type torch.long.
-        kwargs: Any
+        kwargs : Any
             Keyword arguments. They must be optional
             and PairTorch will not pass them to your model.
 
@@ -63,10 +63,10 @@ class MyModel(torch.nn.Module):
         -------
         energy : torch.Tensor
             Total energy of the system with shape [1, 1]
-            and data type torch.float32.
+            and data type torch.float.
         forces : torch.Tensor
             Forces on each atom with shape [num_atoms, num_dimensions]
-            and data type torch.float32.
+            and data type torch.float.
         """
         ...
         return energy, forces
@@ -86,7 +86,7 @@ if __name__ == "__main__":
     compiled_model.save("my_model.pt")
 ```
 
-Make sure that your model is trained to output energies and forces in the same units that your LAMMPS input file [specifies](https://docs.lammps.org/units.html).
+Make sure that your model is trained to take positions and output energies and forces in the same units that your LAMMPS input file [specifies](https://docs.lammps.org/units.html).
 
 ## Use your model in LAMMPS
 
