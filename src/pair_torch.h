@@ -17,6 +17,7 @@ public:
   void settings(int, char **) override;
   void coeff(int, char **) override;
   auto init_one(int, int) -> double override;
+  void init_style() override;
 
 private:
   void allocate();

@@ -1,5 +1,5 @@
 ---
-Checks: "*,-altera-*,-fuchsia-*,-llvmlibc-*,-*-named-parameter, -cppcoreguidelines-pro-bounds-pointer-arithmetic, -google-build-using-namespace, -google-runtime-int"
+Checks: "*,-altera-*,-fuchsia-*,-llvmlibc-*,-*-named-parameter, -cppcoreguidelines-pro-bounds-pointer-arithmetic, -google-build-using-namespace"
 WarningsAsErrors: ""
 HeaderFileExtensions:
   - ""
@@ -17,6 +17,7 @@ AnalyzeTemporaryDtors: false
 FormatStyle: file
 User: niklas
 CheckOptions:
+  cppcoreguidelines-avoid-do-while.IgnoreMacros: true
   cppcoreguidelines-special-member-functions.AllowSoleDefaultDtor: true
   hicpp-special-member-functions.AllowSoleDefaultDtor: true
   readability-identifier-length.IgnoredVariableNames: "f|i|ii|j|jj|x"

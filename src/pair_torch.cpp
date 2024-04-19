@@ -6,9 +6,23 @@
 #include "memory.h"
 #include "neigh_list.h"
 
+#include <cstdint>
 #include <cstring>
 
 #include <torch/script.h>
+
+// #define DEBUG
+#ifdef DEBUG
+#include <iostream>
+#define DEBUG_MSG(msg)                                                         \
+  do {                                                                         \
+    std::cout << "DEBUG: " << (msg) << "\n";                                   \
+  } while (false)
+#else
+#define DEBUG_MSG(str)                                                         \
+  do {                                                                         \
+  } while (false)
+#endif
 
 using namespace LAMMPS_NS;
 
@@ -81,7 +95,7 @@ void PairTorch::compute(int eflag, int vflag) {
   double xtmp, ytmp, ztmp, delx, dely, delz, rsq; // NOLINT
   auto const global_cutoff_sq = global_cutoff * global_cutoff;
 
-  auto edge_indices = std::vector<int>{};
+  auto edge_indices = std::vector<std::int64_t>{};
 
   for (ii = 0; ii < inum; ++ii) {
     i = ilist[ii];
@@ -115,7 +129,8 @@ void PairTorch::compute(int eflag, int vflag) {
 
   auto const edge_index =
       torch::from_blob(
-          edge_indices.data(), {static_cast<long>(edge_indices.size() / 2), 2},
+          edge_indices.data(),
+          {static_cast<std::int64_t>(edge_indices.size() / 2), 2},
           torch::dtype(torch::kInt64).device(torch::kCPU))
           .transpose_(0, 1);
 
@@ -134,6 +149,11 @@ void PairTorch::compute(int eflag, int vflag) {
     position_accessor[k][2] = static_cast<float>(x[k][2]);
   }
 
+  DEBUG_MSG("Model inputs:");
+  DEBUG_MSG(types);
+  DEBUG_MSG(positions);
+  DEBUG_MSG(edge_index);
+
   // ==============================
   // Run model.
   // ==============================
@@ -142,25 +162,40 @@ void PairTorch::compute(int eflag, int vflag) {
       types.to(device), positions.to(device), edge_index.to(device)};
   auto const model_outputs = model.forward(model_inputs).toTuple()->elements();
 
-  auto const forces = torch::Tensor{model_outputs[1].toTensor()}.to(
-      torch::kCPU);
-  auto const forces_accessor = forces.accessor<float, 2>();
+  auto const energy = model_outputs[0].toTensor().to(torch::kCPU);
+  auto const forces = model_outputs[1].toTensor().to(torch::kCPU);
+
+  DEBUG_MSG("Model outputs:");
+  DEBUG_MSG(energy);
+  DEBUG_MSG(forces);
 
   // ==============================
   // Write LAMMPS data.
   // ==============================
 
-  auto const k_max = force->newton_pair != 0 ? ntotal : nlocal;
+  auto const energy_accessor = energy.accessor<float, 2>();
+  auto const forces_accessor = forces.accessor<float, 2>();
 
+  auto const k_max = force->newton_pair != 0 ? ntotal : nlocal;
   for (auto k = 0; k < k_max; ++k) {
     f[k][0] += forces_accessor[k][0];
     f[k][1] += forces_accessor[k][1];
     f[k][2] += forces_accessor[k][2];
   }
 
+  if (eflag_global != 0) {
+    eng_vdwl += energy_accessor[0][0];
+  }
   if (vflag_fdotr != 0) {
     virial_fdotr_compute();
   }
+
+  DEBUG_MSG("Forces:");
+  DEBUG_MSG(forces_accessor[0][0]);
+  DEBUG_MSG(f[0][0]);
+  DEBUG_MSG("Energy:");
+  DEBUG_MSG(energy_accessor[0][0]);
+  DEBUG_MSG(eng_vdwl);
 }
 
 void PairTorch::settings(int narg, char **arg) {
@@ -218,4 +253,18 @@ auto PairTorch::init_one(int i, int j) -> double {
   }
 
   return global_cutoff; // Determines neighbor list cutoff.
+}
+
+void PairTorch::init_style() {
+  Pair::init_style();
+
+  // TODO(niklas): This is what I believe according to my understanding of the
+  // newton setting, but I am not sure if it is correct.
+  if (force->newton_pair == 0) {
+    error->warning(
+        FLERR,
+        "The newton flag is set to off. This may cause double counting "
+        "of potential energy contributions involving ghost atoms. To "
+        "avoid this, use the command `newton on`.");
+  }
 }
