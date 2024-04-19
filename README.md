@@ -48,13 +48,13 @@ class MyModel(torch.nn.Module):
         ----------
         types : torch.Tensor
             Atom types with shape [num_atoms]
-            and data type torch.int.
+            and data type torch.int32.
         positions : torch.Tensor
             Atom positions with shape [num_atoms, num_dimensions]
-            and data type torch.float.
+            and data type torch.float32.
         edge_index : torch.Tensor
             Interaction graph connectivity with shape [2, num_edges]
-            and data type torch.long.
+            and data type torch.int64.
         kwargs : Any
             Keyword arguments. They must be optional
             and PairTorch will not pass them to your model.
@@ -63,10 +63,10 @@ class MyModel(torch.nn.Module):
         -------
         energy : torch.Tensor
             Total energy of the system with shape [1, 1]
-            and data type torch.float.
+            and data type torch.float32.
         forces : torch.Tensor
             Forces on each atom with shape [num_atoms, num_dimensions]
-            and data type torch.float.
+            and data type torch.float32.
         """
         ...
         return energy, forces
