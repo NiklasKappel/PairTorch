@@ -86,7 +86,7 @@ if __name__ == "__main__":
     compiled_model.save("my_model.pt")
 ```
 
-See [here](scripts/torchscript_lightning_example) for a complete training and compilation example. Make sure that your model is trained to take positions and output energies and forces in the same units that your LAMMPS input file [specifies](https://docs.lammps.org/units.html).
+See [here](scripts/torchscript_lightning_example.py) for a complete training and compilation example. Make sure that your model is trained to take positions and output energies and forces in the same units that your LAMMPS input file [specifies](https://docs.lammps.org/units.html).
 
 ## Use your model in LAMMPS
 
