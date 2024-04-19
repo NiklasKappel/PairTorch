@@ -1,6 +1,6 @@
 # PairTorch
 
-PairTorch is a pair style plugin for [LAMMPS](https://www.lammps.org) that lets you use PyTorch machine learning force fields that follow a few basic [rules](#prepare-your-model).
+PairTorch is a pair style plugin for [LAMMPS](https://www.lammps.org) that lets you use [PyTorch](https://pytorch.org/) machine learning force fields that follow a few basic [rules](#prepare-your-model).
 
 ## Requirements
 
@@ -35,7 +35,7 @@ make install
 
 ## Prepare your model
 
-Your model is expected to have a `forward` method with a signature that follows [PyG](https://pytorch-geometric.readthedocs.io) standards:
+Your model is expected to have a `forward` method with a signature that follows [PyTorch Geometric](https://pytorch-geometric.readthedocs.io/en/latest/get_started/introduction.html#data-handling-of-graphs) standards:
 
 ```python
 class MyModel(torch.nn.Module):
