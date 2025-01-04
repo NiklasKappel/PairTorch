@@ -2,6 +2,10 @@
 
 PairTorch is a pair style plugin for [LAMMPS](https://www.lammps.org) that lets you use [PyTorch](https://pytorch.org/) machine learning force fields that follow a few basic [rules](#prepare-your-model).
 
+## Todo
+
+- [ ] Add Kokkos support to avoid CPU-GPU data transfers.
+
 ## Requirements
 
 PairTorch assumes that you build and install LAMMPS from source. Your LAMMPS installation must be able to load [plugins](https://docs.lammps.org/plugin.html). This means that you need to build LAMMPS with the `PKG_PLUGIN` and `BUILD_SHARED_LIBS` options enabled. For example, run the following commands:
